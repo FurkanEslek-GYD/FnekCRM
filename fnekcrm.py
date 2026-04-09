@@ -2,113 +2,78 @@ import streamlit as st
 from supabase import create_client
 import pandas as pd
 
-# --- 1. GÜVENLİK VE GİRİŞ ---
-if "auth" not in st.session_state:
-    st.session_state.auth = False
-
-def login():
-    st.title("⬛ FnekCRM Giriş")
-    pw = st.text_input("Yönetici Şifresi", type="password")
-    if st.button("Sistemi Aç"):
-        if pw == "3003Locate":
-            st.session_state.auth = True
-            st.rerun()
-        else:
-            st.error("Hatalı Şifre!")
-
-if not st.session_state.auth:
-    login()
-    st.stop()
-
-# --- 2. VERİTABANI BAĞLANTISI ---
+# --- BAĞLANTI ---
 URL = "https://kzeklqalcuvgilrhomvs.supabase.co"
 KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6ZWtscWFsY3V2Z2lscmhvbXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzE2NzQsImV4cCI6MjA5MTMwNzY3NH0.D0M1DtB1Qhx2fz175y96GTx9nHzfr8TR5dOveHnI8r0"
 supabase = create_client(URL, KEY)
 
-st.set_page_config(page_title="FnekCRM Pro", layout="wide")
-st.title("⬛ FnekCRM | Kurumsal Operasyon")
+# --- GİRİŞ ---
+if "auth" not in st.session_state:
+    st.session_state.auth = False
 
-# --- 3. SEKMELERİN TANIMLANMASI ---
-t1, t2, t3 = st.tabs(["📁 PORTFÖY (v2)", "👤 MÜŞTERİ (CRM)", "🔥 FSBO TAKİP"])
+if not st.session_state.auth:
+    with st.form("login_form"):
+        pw = st.text_input("Yönetici Şifresi", type="password")
+        if st.form_submit_button("Sistemi Aç"):
+            if pw == "3003Locate":
+                st.session_state.auth = True
+                st.rerun()
+            else: st.error("Hatalı!")
+    st.stop()
 
-# --- TAB 1: PORTFÖY (v2) ---
+st.title("⬛ FnekCRM | Operasyonel Yönetim")
+
+t1, t2, t3 = st.tabs(["📁 PORTFÖY YÖNETİMİ", "👤 CRM", "🔥 FSBO"])
+
 with t1:
     c1, c2 = st.columns([1, 2])
     with c1:
-        with st.form("p_form_v2_final"):
-            st.subheader("Yeni Portföy Kaydı")
+        st.subheader("Yeni Portföy Kaydı")
+        with st.form("p_full_form"):
             p_baslik = st.text_input("Mülk Başlığı*")
-            p_fiyat = st.number_input("Fiyat (TL)", min_value=0)
-            p_m2 = st.number_input("m2", min_value=1)
-            p_islem = st.selectbox("İşlem", ["Satılık", "Kiralık", "Devren"])
-            p_ilce = st.selectbox("İlçe", ["Güzelbahçe", "Urla", "Buca", "Narlıdere"])
             
-            if st.form_submit_button("KAYDET"):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                p_ilce = st.selectbox("İlçe", ["Güzelbahçe", "Urla", "Buca", "Narlıdere"])
+                p_islem = st.selectbox("İşlem Tipi", ["Satılık", "Kiralık", "Devren"])
+                p_fiyat = st.number_input("Fiyat (TL)", min_value=0, step=1000)
+            with col_b:
+                p_mahalle = st.text_input("Mahalle")
+                p_tip = st.selectbox("Mülk Tipi", ["Konut", "Ticari", "Arsa", "Villa"])
+                p_m2 = st.number_input("Net m2", min_value=1, step=1)
+            
+            p_drive = st.text_input("Google Drive Link")
+            p_soz = st.text_input("Sözleşme/Dosya Link")
+            
+            if st.form_submit_button("PORTFÖYÜ SİSTEME İŞLE"):
                 if p_baslik:
-                    data_p = {
-                        "baslik": p_baslik,
-                        "fiyat": float(p_fiyat),
-                        "m2": float(p_m2),
-                        "birim_fiyat": float(p_fiyat/p_m2) if p_m2 > 0 else 0,
-                        "islem_tipi": p_islem,
-                        "ilce": p_ilce
+                    # ANALİTİK VERİ YAPILANDIRMASI
+                    payload = {
+                        "baslik": str(p_baslik),
+                        "ilce": str(p_ilce),
+                        "mahalle": str(p_mahalle),
+                        "fiyat": int(p_fiyat),
+                        "m2": int(p_m2),
+                        "birim_fiyat": round(float(p_fiyat/p_m2), 2) if p_m2 > 0 else 0,
+                        "islem_tipi": str(p_islem),
+                        "mulk_tipi": str(p_tip),
+                        "drive_link": str(p_drive) if p_drive else None,
+                        "sozlesme_link": str(p_soz) if p_soz else None
                     }
-                    supabase.table("portfoy_v2").insert(data_p).execute()
-                    st.success("Portföy başarıyla eklendi!")
-                    st.rerun()
+                    
+                    try:
+                        supabase.table("portfoy_v2").insert(payload).execute()
+                        st.success("Portföy başarıyla envantere eklendi.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Veri Tipleri Hatası: {str(e)}")
+                else:
+                    st.warning("Mülk başlığı girmek zorunludur.")
 
     with c2:
-        st.subheader("Aktif Envanter")
-        try:
-            res_p = supabase.table("portfoy_v2").select("*").execute()
-            if res_p.data:
-                df_p = pd.DataFrame(res_p.data)
-                st.dataframe(df_p[['baslik', 'fiyat', 'islem_tipi', 'ilce']], use_container_width=True)
-            else:
-                st.info("Portföy listesi boş.")
-        except:
-            st.warning("Veri tabanı bağlantısı bekleniyor...")
-
-# --- TAB 2: MÜŞTERİ (CRM) ---
-with t2:
-    c3, c4 = st.columns([1, 2])
-    with c3:
-        with st.form("crm_form_final"):
-            st.subheader("Müşteri Kaydı")
-            m_ad = st.text_input("Ad Soyad")
-            m_tel = st.text_input("Telefon")
-            m_rol = st.selectbox("Rol", ["Alıcı", "Satıcı"])
-            if st.form_submit_button("CRM EKLE"):
-                supabase.table("musteriler").insert({"ad_soyad": m_ad, "telefon": m_tel, "rol": m_rol}).execute()
-                st.success("Müşteri kaydedildi.")
-                st.rerun()
-    with c4:
-        st.subheader("Müşteri Portföyü")
-        try:
-            res_m = supabase.table("musteriler").select("*").execute()
-            if res_m.data:
-                st.dataframe(pd.DataFrame(res_m.data)[['ad_soyad', 'telefon', 'rol']], use_container_width=True)
-        except:
-            st.info("Henüz müşteri kaydı yok.")
-
-# --- TAB 3: FSBO TAKİP ---
-with t3:
-    c5, c6 = st.columns([1, 2])
-    with c5:
-        with st.form("fsbo_form_final"):
-            st.subheader("FSBO Takip")
-            f_ad = st.text_input("Mal Sahibi")
-            f_tel = st.text_input("İletişim No")
-            f_durum = st.selectbox("Durum", ["Potansiyel", "Randevu", "Portföy"])
-            if st.form_submit_button("FSBO EKLE"):
-                supabase.table("fsbo_takip").insert({"mal_sahibi_ad": f_ad, "mal_sahibi_tel": f_tel, "durum": f_durum}).execute()
-                st.success("Takip listesine eklendi.")
-                st.rerun()
-    with c6:
-        st.subheader("Saha Takip Listesi")
-        try:
-            res_f = supabase.table("fsbo_takip").select("*").execute()
-            if res_f.data:
-                st.dataframe(pd.DataFrame(res_f.data)[['mal_sahibi_ad', 'mal_sahibi_tel', 'durum']], use_container_width=True)
-        except:
-            st.info("FSBO takibi boş.")
+        st.subheader("Güncel Envanter Verileri")
+        res = supabase.table("portfoy_v2").select("*").order("eklenme_tarihi", desc=True).execute()
+        if res.data:
+            df = pd.DataFrame(res.data)
+            # Analitik görünüm için sütunları düzenle
+            st.dataframe(df[['baslik', 'ilce', 'fiyat', 'islem_tipi', 'mulk_tipi']], use_container_width=True)
