@@ -2,187 +2,125 @@ import streamlit as st
 from supabase import create_client
 import pandas as pd
 
-# --- ANALİTİK AYARLAR (Kendi anahtarlarınızı tırnak içine yazın) ---
-import streamlit as st
-from supabase import create_client
-import pandas as pd
-
-# --- ANALİTİK AYARLAR (Kendi anahtarlarınızı tırnak içine yazın) ---
+# --- ANALİTİK AYARLAR ---
+# Buradaki tırnak içindeki kısımları kendi bilgilerinizle doldurun
 URL = "https://kzeklqalcuvgilrhomvs.supabase.co"
 KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6ZWtscWFsY3V2Z2lscmhvbXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzE2NzQsImV4cCI6MjA5MTMwNzY3NH0.D0M1DtB1Qhx2fz175y96GTx9nHzfr8TR5dOveHnI8r0"
-# -------------------------------------------------------------
+# -------------------------
 
-supabase = create_client(URL, KEY)
+try:
+    supabase = create_client(URL, KEY)
+except:
+    st.error("Veritabanı bağlantısı kurulamadı. Lütfen anahtarları kontrol edin.")
 
-# İzmir Veri Seti (Örnekleme - Tüm ilçeler eklenebilir)
+# İzmir Genişletilmiş Veri Seti
 izmir_data = {
-    "Güzelbahçe": ["Yalı", "Çelebi", "Yelki", "Siteler", "Maltepe", "Atatürk", "Kahramandere"],
-    "Urla": ["İskele", "Zeytinalanı", "Şirinkent", "Yenikale", "Altıntaş", "Kalabak"],
-    "Buca": ["Adatepe", "Safir", "Yiğitler", "Şirinyer", "Dumlupınar", "Yıldız"],
-    "Çeşme": ["Alaçatı", "Ilıca", "Musalla", "Boyalık", "Dalyan"],
-    "Karşıyaka": ["Mavişehir", "Bostanlı", "Atakent", "Bahçelievler", "Tersane"]
+    "Güzelbahçe": ["Yalı", "Çelebi", "Yelki", "Siteler", "Maltepe", "Atatürk", "Kahramandere", "Küçükkaya", "Payamlı"],
+    "Urla": ["İskele", "Zeytinalanı", "Şirinkent", "Yenikale", "Altıntaş", "Kalabak", "Güvendik", "Yenice", "Hacı İsa"],
+    "Buca": ["Adatepe", "Safir", "Yiğitler", "Şirinyer", "Dumlupınar", "Yıldız", "Kuruçeşme", "Buca Koop"],
+    "Çeşme": ["Alaçatı", "Ilıca", "Musalla", "Boyalık", "Dalyan", "Reisdere", "Germiyan", "Ovacık"],
+    "Karşıyaka": ["Mavişehir", "Bostanlı", "Atakent", "Bahçelievler", "Tersane", "Alaybey", "Aksoy"],
+    "Konak": ["Alsancak", "Göztepe", "Güzelyalı", "Hatay", "Karantina", "Küçükyalı", "Kahramanlar"],
+    "Bornova": ["Kazımdirik", "Özkanlar", "Manavkuyu", "Mevlana", "Erzene", "Işıklar"],
+    "Narlıdere": ["Yenikale", "Sahilevleri", "Huzur", "Limanreis", "Çatalkaya"],
+    "Gaziemir": ["Atıfbey", "Yeşil mahallesi", "Irmak", "Sevgi", "Binbaşı Reşat Bey"],
+    "Seferihisar": ["Sığacık", "Akarca", "Camikebir", "Hıdırlık"]
 }
 
 st.set_page_config(page_title="FnekCRM PRO", layout="wide")
 
-# Dark Theme & Kurumsal Stil
+# Dark Executive Tasarım Kodları
 st.markdown("""
     <style>
     .main { background-color: #0e1117; }
-    div[data-testid="stMetricValue"] { color: #ffffff; font-weight: bold; }
-    .stButton>button { width: 100%; background-color: #1f1f1f; color: white; border: 1px solid #333; }
-    .stButton>button:hover { border-color: #ffffff; }
+    [data-testid="stMetricValue"] { color: #ffffff !important; font-size: 24px; }
+    .stMetric { background-color: #1a1c23; padding: 20px; border-radius: 10px; border: 1px solid #30363d; }
+    .stSidebar { background-color: #0b0e14; }
+    h1, h2, h3 { color: #ffffff; font-family: 'Inter', sans-serif; }
+    .stDataFrame { border: 1px solid #30363d; border-radius: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("⬛ FnekCRM | Executive Dashboard")
+st.title("⬛ FnekCRM | Analitik Gayrimenkul Yönetimi")
 
 # --- SOL PANEL: VERİ GİRİŞİ ---
 with st.sidebar:
-    st.header("🏢 Portföy Kayıt")
+    st.image("https://www.google.com/s2/favicons?domain=github.com&sz=64") # Geçici Logo
+    st.header("🏢 Yeni Portföy Kaydı")
     with st.form("pro_form", clear_on_submit=True):
-        baslik = st.text_input("İlan Başlığı")
-        ilce = st.selectbox("İlçe", list(izmir_data.keys()))
-        mahalle = st.selectbox("Mahalle", izmir_data[ilce])
-        m2 = st.number_input("Metrekare (Net)", min_value=1)
-        fiyat = st.number_input("İstenen Fiyat (TL)", min_value=1000)
-        notlar = st.text_area("Özel Analitik Notlar")
+        baslik = st.text_input("İlan Başlığı (Örn: Deniz Manzaralı Villa)")
+        ilce = st.selectbox("İlçe Seçiniz", list(izmir_data.keys()))
+        mahalle = st.selectbox("Mahalle Seçiniz", izmir_data[ilce])
+        m2 = st.number_input("Metrekare (Net m²)", min_value=1, step=1)
+        fiyat = st.number_input("İstenen Toplam Fiyat (TL)", min_value=1000, step=10000)
+        notlar = st.text_area("Analitik Notlar & Mülk Sahibi Durumu")
         
-        if st.form_submit_button("Sisteme İşle"):
-            birim = fiyat / m2
-            data = {
-                "mulk_adi": baslik, "bolge": ilce, "mahalle": mahalle, 
-                "m2": m2, "fiyat": fiyat, "birim_fiyat": birim, "notlar": notlar
-            }
-            supabase.table("portfoy").insert(data).execute()
-            st.success("Bulut senkronizasyonu tamamlandı.")
+        submit = st.form_submit_button("Sisteme Güvenli Kaydet")
+        
+        if submit:
+            if baslik:
+                birim = fiyat / m2
+                data = {
+                    "mulk_adi": baslik, "bolge": ilce, "mahalle": mahalle, 
+                    "m2": m2, "fiyat": fiyat, "birim_fiyat": birim, "notlar": notlar
+                }
+                try:
+                    supabase.table("portfoy").insert(data).execute()
+                    st.success("Veri bulut sunucularına işlendi.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Hata: {e}")
+            else:
+                st.warning("Lütfen bir ilan başlığı girin.")
 
-# --- ANA EKRAN: ANALİTİK & İNCELEME ---
-res = supabase.table("portfoy").select("*").execute()
-df = pd.DataFrame(res.data)
+# --- ANA EKRAN: ANALİTİK DASHBOARD ---
+try:
+    res = supabase.table("portfoy").select("*").order("eklenme_tarihi", desc=True).execute()
+    df = pd.DataFrame(res.data)
+except:
+    df = pd.DataFrame()
 
 if not df.empty:
-    # Üst Özet Kartlar
-    c1, c2, c3 = st.columns(3)
+    # 1. Üst Özet Metrikleri
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Toplam Hacim", f"{df['fiyat'].sum():,.0f} TL")
-    c2.metric("Ort. m² Birim", f"{df['birim_fiyat'].mean():,.0f} TL")
-    c3.metric("Aktif Portföy", len(df))
+    c2.metric("Ortalama m² Fiyatı", f"{df['birim_fiyat'].mean():,.0f} TL")
+    c3.metric("Toplam Portföy", len(df))
+    c4.metric("En Değerli Bölge", df.loc[df['birim_fiyat'].idxmax()]['bolge'])
 
     st.divider()
 
-    # İlanları Seçme ve İnceleme (Sahibinden Tarzı)
-    st.subheader("🔍 Portföy Detay Analizi")
-    secili_ilan_adi = st.selectbox("İncelemek istediğiniz ilanı seçin:", df['mulk_adi'].tolist())
+    # 2. Sahibinden Tarzı İnceleme Paneli
+    st.subheader("🔍 Portföy Detay İnceleme (Sahibinden Arayüzü)")
+    secili_ilan = st.selectbox("İncelemek istediğiniz portföyü seçin:", df['mulk_adi'].tolist())
     
-    ilan_detay = df[df['mulk_adi'] == secili_ilan_adi].iloc[0]
+    ilan_detay = df[df['mulk_adi'] == secili_ilan].iloc[0]
 
-    # Detay Kartı Tasarımı
     with st.container():
-        col_a, col_b = st.columns([1, 2])
-        with col_a:
-            st.markdown(f"### {ilan_detay['mulk_adi']}")
-            st.info(f"📍 {ilan_detay['bolge']} / {ilan_detay['mahalle']}")
-            st.write(f"**m²:** {ilan_detay['m2']}")
-            st.write(f"**Birim Fiyat:** {ilan_detay['birim_fiyat']:,.0f} TL")
-            st.error(f"**TOPLAM FİYAT: {ilan_detay['fiyat']:,.0f} TL**")
+        col_sol, col_sag = st.columns([1.5, 2.5])
         
-        with col_b:
-            st.markdown("#### Danışman Notları & Strateji")
-            st.write(ilan_detay['notlar'] if ilan_detay['notlar'] else "Not eklenmemiş.")
-            # Basit bir kıyaslama grafiği
-            st.bar_chart(df[df['bolge'] == ilan_detay['bolge']].set_index('mulk_adi')['birim_fiyat'])
+        with col_sol:
+            st.markdown(f"### {ilan_detay['mulk_adi']}")
+            st.markdown(f"**📍 Konum:** {ilan_detay['bolge']} / {ilan_detay['mahalle']}")
+            st.markdown(f"**📐 Alan:** {int(ilan_detay['m2'])} m²")
+            st.markdown(f"**💰 Toplam Fiyat:** {ilan_detay['fiyat']:,.0f} TL")
+            st.markdown(f"**📊 Birim m² Fiyatı:** {ilan_detay['birim_fiyat']:,.0f} TL")
+            st.caption(f"Kayıt Tarihi: {ilan_detay['eklenme_tarihi']}")
+
+        with col_sag:
+            st.info("💡 **Analitik Notlar & Strateji**")
+            st.write(ilan_detay['notlar'] if ilan_detay['notlar'] else "Bu portföy için henüz not eklenmemiş.")
+            
+            # Bölge Kıyaslama Grafiği
+            st.write(f"**{ilan_detay['bolge']} Bölgesi Fiyat Kıyaslaması**")
+            bolge_df = df[df['bolge'] == ilan_detay['bolge']]
+            st.bar_chart(bolge_df.set_index('mulk_adi')['birim_fiyat'])
 
     st.divider()
-    st.write("### Tüm Veri Tablosu")
-    st.dataframe(df, use_container_width=True)
+    
+    # 3. Genel Liste
+    with st.expander("📂 Tüm Portföy Listesini Gör"):
+        st.dataframe(df, use_container_width=True)
 
 else:
-    st.info("Sistemde analiz edilecek veri bulunamadı.")
-# -------------------------------------------------------------
-
-supabase = create_client(URL, KEY)
-
-# İzmir Veri Seti (Örnekleme - Tüm ilçeler eklenebilir)
-izmir_data = {
-    "Güzelbahçe": ["Yalı", "Çelebi", "Yelki", "Siteler", "Maltepe", "Atatürk", "Kahramandere"],
-    "Urla": ["İskele", "Zeytinalanı", "Şirinkent", "Yenikale", "Altıntaş", "Kalabak"],
-    "Buca": ["Adatepe", "Safir", "Yiğitler", "Şirinyer", "Dumlupınar", "Yıldız"],
-    "Çeşme": ["Alaçatı", "Ilıca", "Musalla", "Boyalık", "Dalyan"],
-    "Karşıyaka": ["Mavişehir", "Bostanlı", "Atakent", "Bahçelievler", "Tersane"]
-}
-
-st.set_page_config(page_title="FnekCRM PRO", layout="wide")
-
-# Dark Theme & Kurumsal Stil
-st.markdown("""
-    <style>
-    .main { background-color: #0e1117; }
-    div[data-testid="stMetricValue"] { color: #ffffff; font-weight: bold; }
-    .stButton>button { width: 100%; background-color: #1f1f1f; color: white; border: 1px solid #333; }
-    .stButton>button:hover { border-color: #ffffff; }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.title("⬛ FnekCRM | Executive Dashboard")
-
-# --- SOL PANEL: VERİ GİRİŞİ ---
-with st.sidebar:
-    st.header("🏢 Portföy Kayıt")
-    with st.form("pro_form", clear_on_submit=True):
-        baslik = st.text_input("İlan Başlığı")
-        ilce = st.selectbox("İlçe", list(izmir_data.keys()))
-        mahalle = st.selectbox("Mahalle", izmir_data[ilce])
-        m2 = st.number_input("Metrekare (Net)", min_value=1)
-        fiyat = st.number_input("İstenen Fiyat (TL)", min_value=1000)
-        notlar = st.text_area("Özel Analitik Notlar")
-        
-        if st.form_submit_button("Sisteme İşle"):
-            birim = fiyat / m2
-            data = {
-                "mulk_adi": baslik, "bolge": ilce, "mahalle": mahalle, 
-                "m2": m2, "fiyat": fiyat, "birim_fiyat": birim, "notlar": notlar
-            }
-            supabase.table("portfoy").insert(data).execute()
-            st.success("Bulut senkronizasyonu tamamlandı.")
-
-# --- ANA EKRAN: ANALİTİK & İNCELEME ---
-res = supabase.table("portfoy").select("*").execute()
-df = pd.DataFrame(res.data)
-
-if not df.empty:
-    # Üst Özet Kartlar
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Toplam Hacim", f"{df['fiyat'].sum():,.0f} TL")
-    c2.metric("Ort. m² Birim", f"{df['birim_fiyat'].mean():,.0f} TL")
-    c3.metric("Aktif Portföy", len(df))
-
-    st.divider()
-
-    # İlanları Seçme ve İnceleme (Sahibinden Tarzı)
-    st.subheader("🔍 Portföy Detay Analizi")
-    secili_ilan_adi = st.selectbox("İncelemek istediğiniz ilanı seçin:", df['mulk_adi'].tolist())
-    
-    ilan_detay = df[df['mulk_adi'] == secili_ilan_adi].iloc[0]
-
-    # Detay Kartı Tasarımı
-    with st.container():
-        col_a, col_b = st.columns([1, 2])
-        with col_a:
-            st.markdown(f"### {ilan_detay['mulk_adi']}")
-            st.info(f"📍 {ilan_detay['bolge']} / {ilan_detay['mahalle']}")
-            st.write(f"**m²:** {ilan_detay['m2']}")
-            st.write(f"**Birim Fiyat:** {ilan_detay['birim_fiyat']:,.0f} TL")
-            st.error(f"**TOPLAM FİYAT: {ilan_detay['fiyat']:,.0f} TL**")
-        
-        with col_b:
-            st.markdown("#### Danışman Notları & Strateji")
-            st.write(ilan_detay['notlar'] if ilan_detay['notlar'] else "Not eklenmemiş.")
-            # Basit bir kıyaslama grafiği
-            st.bar_chart(df[df['bolge'] == ilan_detay['bolge']].set_index('mulk_adi')['birim_fiyat'])
-
-    st.divider()
-    st.write("### Tüm Veri Tablosu")
-    st.dataframe(df, use_container_width=True)
-
-else:
-    st.info("Sistemde analiz edilecek veri bulunamadı.")
+    st.info("Henüz veri girişi yapılmamış. Sol panelden ilk portföyünüzü kaydedebilirsiniz.")
